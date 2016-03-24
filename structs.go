@@ -1,17 +1,13 @@
 // Package structs contains various utilities functions to work with structs.
 package structs
 
-import (
-	"fmt"
-
-	"reflect"
-)
+import "reflect"
 
 var (
 	// DefaultTagName is the default tag name for struct fields which provides
 	// a more granular to tweak certain structs. Lookup the necessary functions
 	// for more info.
-	DefaultTagName = "structs" // struct's field default tag name
+	DefaultTagName = "json" // struct's field default tag name
 )
 
 // Struct encapsulates a struct type to provide several high level functions
@@ -46,12 +42,6 @@ func New(s interface{}) *Struct {
 //   // Field is ignored by this package.
 //   Field bool `structs:"-"`
 //
-// A tag value with the content of "string" uses the stringer to get the value. Example:
-//
-//   // The value will be output of Animal's String() func.
-//   // Map will panic if Animal does not implement String().
-//   Field *Animal `structs:"field,string"`
-//
 // A tag value with the option of "omitnested" stops iterating further if the type
 // is a struct. Example:
 //
@@ -74,16 +64,6 @@ func New(s interface{}) *Struct {
 // fields will be neglected.
 func (s *Struct) Map() map[string]interface{} {
 	out := make(map[string]interface{})
-	s.FillMap(out)
-	return out
-}
-
-// FillMap is the same as Map. Instead of returning the output, it fills the
-// given map.
-func (s *Struct) FillMap(out map[string]interface{}) {
-	if out == nil {
-		return
-	}
 
 	fields := s.structFields()
 
@@ -124,16 +104,10 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 			finalVal = val.Interface()
 		}
 
-		if tagOpts.Has("string") {
-			s, ok := val.Interface().(fmt.Stringer)
-			if ok {
-				out[name] = s.String()
-			}
-			continue
-		}
-
 		out[name] = finalVal
 	}
+
+	return out
 }
 
 // Values converts the given s struct's field values to a []interface{}.  A
@@ -177,14 +151,6 @@ func (s *Struct) Values() []interface{} {
 			if reflect.DeepEqual(current, zero) {
 				continue
 			}
-		}
-
-		if tagOpts.Has("string") {
-			s, ok := val.Interface().(fmt.Stringer)
-			if ok {
-				t = append(t, s.String())
-			}
-			continue
 		}
 
 		if IsStruct(val.Interface()) && !tagOpts.Has("omitnested") {
@@ -433,12 +399,6 @@ func strctVal(s interface{}) reflect.Value {
 // refer to Struct types Map() method. It panics if s's kind is not struct.
 func Map(s interface{}) map[string]interface{} {
 	return New(s).Map()
-}
-
-// FillMap is the same as Map. Instead of returning the output, it fills the
-// given map.
-func FillMap(s interface{}, out map[string]interface{}) {
-	New(s).FillMap(out)
 }
 
 // Values converts the given struct to a []interface{}. For more info refer to
